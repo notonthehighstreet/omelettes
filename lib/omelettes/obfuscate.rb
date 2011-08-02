@@ -5,18 +5,26 @@ module Omelettes
         total_tables = 0
         total_attributes = 0
         Words.load(word_list || "/usr/share/dict/words")
+        backend = (self.backend || Backend::ActiveRecord).new
+        
         tables.each do |table|
           next if ignore_table?(table)
           print "\nProcessing #{model(table).name}" unless silent
           model(table).find_each do |object|
+            new_attributes = {}
             model(table).columns.each do |column|
               next if ignore_column?(column.name) || column.type != :string
-              object.obfuscate(column.name)
-              total_attributes += 1
+              
+              if new_value = object.obfuscate_value(column.name)
+                new_attributes[column.name] = new_value
+                total_attributes += 1
+              end
             end
             print "." unless silent
+            backend.persist(object, new_attributes)
           end
           total_tables += 1
+          backend.complete(model(table))
         end
         print "\n" unless silent
         [total_tables, total_attributes]
@@ -59,6 +67,7 @@ module Omelettes
       attr_accessor :ignore_columns
       attr_accessor :word_list
       attr_accessor :models
+      attr_accessor :backend
     end
   end
 end

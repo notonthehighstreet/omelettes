@@ -11,6 +11,7 @@ class TablelessModel < ActiveRecord::Base
     columns << ActiveRecord::ConnectionAdapters::Column.new(name.to_s, default, sql_type.to_s, null)
   end
 
+  def self.table_exists?; false; end
 end
 
 class User < TablelessModel
